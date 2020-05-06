@@ -65,5 +65,8 @@ MenuConstructors.video = Video
 import Image from './img/index.js'
 MenuConstructors.image = Image
 
+import StyleBrush from './styleBrush/index.js'
+MenuConstructors.styleBrush = StyleBrush
+
 // 吐出所有菜单集合
 export default MenuConstructors

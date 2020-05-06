@@ -166,6 +166,93 @@ Text.prototype = {
             saveRange()
             // 在编辑器区域之内完成点击，取消鼠标滑动到编辑区外面的事件
             $textElem.off('mouseleave', saveRange)
+
+            if(editor._brush){
+                let text
+                let style=''
+                let wrapStyle=''
+                for (const key in editor._style) {
+                    if (editor._style.hasOwnProperty(key)) {
+                        const element = editor._style[key];
+                        if (key==='wrap') {
+                            for (const Wkey in element) {
+                                if (element.hasOwnProperty(Wkey)) {
+                                    const Welement = element[Wkey];
+                                    wrapStyle+=`${Wkey}:${Welement};`
+                                }
+                            }
+                        }else{
+                            style+=`${key}:${element};`
+                        }
+                    }
+                }
+
+                if (!editor.selection.isSelectionEmpty()) {
+                    let range = editor.selection.getRange()
+                    let containerElem = editor.selection.getSelectionContainerElem()
+                    if (!containerElem.equal(editor.$textElem[0])) {
+                        text = editor.selection.getSelectionText()
+                        containerElem.closest('p').setAttribute('style', wrapStyle)
+                        editor.cmd.do('insertHTML', `<span style="${style}">${text}</span>`)
+                    } else {
+                        let elements = []
+                        let startElem = range.startContainer
+                        let startElemCon = $(startElem).closest('p')
+                        let endElem = range.endContainer
+                        let endElemCon = $(endElem).closest('p')
+                        elements.push({
+                            type: 'start',
+                            elem: startElem,
+                            offset: range.startOffset,
+                            containerType: range.startContainer.nodeType === 1 ? 'NODE' : 'TEXT',
+                            container: startElemCon
+                        })
+                        while (!startElemCon.next().equal(endElemCon)) {
+                            startElemCon = startElemCon.next()
+                            elements.push({
+                                type: 'mid',
+                                elem: startElemCon,
+                                container: startElemCon
+                            })
+                        }
+                        elements.push({
+                            type: 'end',
+                            elem: endElem,
+                            offset: range.endOffset,
+                            containerType: range.startContainer.nodeType === 1 ? 'NODE' : 'TEXT',
+                            container: endElemCon
+                        })
+                        elements.forEach(element => {
+                            let container = $(element.container)
+                            let range = editor.selection.createRangeByElem(container, null, true)
+                            if (element.type === 'start') {
+                                range.setStart(element.elem, element.offset)
+                                editor.selection.saveRange(range)
+                                editor.selection.restoreSelection()
+                                text = editor.selection.getSelectionText()
+                                container[0].setAttribute('style', wrapStyle)
+                                editor.cmd.do('insertHTML', `<span style="${style}">${text}</span>`)
+                            } else if (element.type === 'mid') {
+                                text = range.toString()
+                                container[0].setAttribute('style', wrapStyle)
+                                editor.cmd.do('insertHTML', `<span style="${style}">${text}</span>`)
+                            } else if (element.type === 'end') {
+                                range.setEnd(element.elem, element.offset)
+                                editor.selection.saveRange(range)
+                                editor.selection.restoreSelection()
+                                text = editor.selection.getSelectionText()
+                                container[0].setAttribute('style', wrapStyle)
+                                editor.cmd.do('insertHTML', `<span style="${style}">${text}</span>`)
+                            }
+                        });
+                    }
+                }
+
+                editor._brush = false
+                editor.menus.menus.styleBrush._active = false
+                editor.menus.menus.styleBrush.$elem.removeClass('w-e-active')
+                editor.$textContainerElem.removeClass('brush')
+            }
         })
     },
 

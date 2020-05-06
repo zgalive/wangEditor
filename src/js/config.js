@@ -25,7 +25,8 @@ const config = {
         'video',
         'code',
         'undo',
-        'redo'
+        'redo',
+        'styleBrush'
     ],
 
     fontNames: [

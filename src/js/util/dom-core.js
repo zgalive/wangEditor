@@ -245,6 +245,38 @@ DomElement.prototype = {
     // 修改 css
     css: function (key, val) {
         const currentStyle = `${key}:${val};`
+
+        if(!key && !val){
+            let result = {};
+            let closestEle = this.closest('p')
+            this.forEach(elem=>{
+                const style = (elem.getAttribute('style') || '').trim()
+                if(style){
+                    let styleArr = style.split(";")
+                    styleArr.forEach(item=>{
+                        let arr = item.split(':').map(i => {
+                            return i.trim()
+                        })
+                        if (arr.length === 2) {
+                            result[arr[0]] = arr[1]
+                        }
+                    })
+                }
+            })
+            if(closestEle){
+                let closestStyle = (closestEle.getAttribute('style') || "").trim()
+                if(closestStyle){
+                    let wrap = {}
+                    for(let key in closestStyle){
+                        wrap[key] = closestStyle[key]
+                    }
+                    result['wrap'] = wrap
+                }
+            }
+
+            return result
+        }
+
         return this.forEach(elem => {
             const style = (elem.getAttribute('style') || '').trim()
             let styleArr, resultArr = []
@@ -466,6 +498,28 @@ DomElement.prototype = {
                 parent.insertBefore(elem, referenceNode.nextSibling)
             }
         })
+    },
+
+    closest: function (selector){
+        if(typeof selector === "string"){
+            let isItSelf = this["selector"].tagName === selector
+            if(isItSelf){
+                return this
+            }
+        }
+
+        var matches = document.querySelectorAll(selector),
+            i,
+            el = this["selector"];
+        
+        for(let elem of matches){
+            if(elem == el.parentElement){
+                el = elem
+                break;
+            }
+        }
+
+        return el;
     }
 }
 
