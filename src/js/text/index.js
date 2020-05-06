@@ -192,7 +192,7 @@ Text.prototype = {
                     let containerElem = editor.selection.getSelectionContainerElem()
                     if (!containerElem.equal(editor.$textElem[0])) {
                         text = editor.selection.getSelectionText()
-                        containerElem.closest('p').setAttribute('style', wrapStyle)
+                        containerElem.closest('p')[0].setAttribute('style', wrapStyle)
                         editor.cmd.do('insertHTML', `<span style="${style}">${text}</span>`)
                     } else {
                         let elements = []
@@ -224,7 +224,8 @@ Text.prototype = {
                         })
                         elements.forEach(element => {
                             let container = $(element.container)
-                            let range = editor.selection.createRangeByElem(container, null, true)
+                            editor.selection.createRangeByElem(container, null, true)
+                            let range = editor.selection._currentRange
                             if (element.type === 'start') {
                                 range.setStart(element.elem, element.offset)
                                 editor.selection.saveRange(range)

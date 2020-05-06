@@ -299,7 +299,7 @@ DomElement.prototype = {
 
         if (!key && !val) {
             var result = {};
-            var closestEle = this.closest('p');
+            var closestEle = this.closest('p')[0];
             this.forEach(function (elem) {
                 var style = (elem.getAttribute('style') || '').trim();
                 if (style) {
@@ -594,7 +594,12 @@ DomElement.prototype = {
             }
         }
 
-        return el;
+        return new DomElement(el);
+    },
+
+    //只返回紧接着的元素
+    next: function next() {
+        return new DomElement(this[0].nextSibling);
     }
 
     // new 一个对象
@@ -3426,7 +3431,7 @@ Text.prototype = {
                     var containerElem = editor.selection.getSelectionContainerElem();
                     if (!containerElem.equal(editor.$textElem[0])) {
                         text = editor.selection.getSelectionText();
-                        containerElem.closest('p').setAttribute('style', wrapStyle);
+                        containerElem.closest('p')[0].setAttribute('style', wrapStyle);
                         editor.cmd.do('insertHTML', '<span style="' + style + '">' + text + '</span>');
                     } else {
                         var elements = [];
@@ -3458,7 +3463,8 @@ Text.prototype = {
                         });
                         elements.forEach(function (element) {
                             var container = $(element.container);
-                            var range = editor.selection.createRangeByElem(container, null, true);
+                            editor.selection.createRangeByElem(container, null, true);
+                            var range = editor.selection._currentRange;
                             if (element.type === 'start') {
                                 range.setStart(element.elem, element.offset);
                                 editor.selection.saveRange(range);

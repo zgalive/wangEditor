@@ -248,7 +248,7 @@ DomElement.prototype = {
 
         if(!key && !val){
             let result = {};
-            let closestEle = this.closest('p')
+            let closestEle = this.closest('p')[0]
             this.forEach(elem=>{
                 const style = (elem.getAttribute('style') || '').trim()
                 if(style){
@@ -519,7 +519,12 @@ DomElement.prototype = {
             }
         }
 
-        return el;
+        return new DomElement(el);
+    },
+
+    //只返回紧接着的元素
+    next: function (){
+        return new DomElement(this[0].nextSibling)
     }
 }
 
