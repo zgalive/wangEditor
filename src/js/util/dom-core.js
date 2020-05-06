@@ -524,7 +524,8 @@ DomElement.prototype = {
 
     //只返回紧接着的元素
     next: function (){
-        return new DomElement(this[0].nextSibling)
+        let element = this[0] || this['selector']
+        return new DomElement(element.nextSibling)
     }
 }
 
