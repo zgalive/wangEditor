@@ -326,22 +326,24 @@ DomElement.prototype = {
                     }
                 });
 
-                //查找元素本身至最外第二层之间元素的样式
-                var parentEl = _this['selector'].parentElement;
-                while (parentEl != closestEle) {
-                    var style = (parentEl.getAttribute('style') || '').trim();
-                    if (style) {
-                        var styleArr = style.split(';');
-                        styleArr.forEach(function (item) {
-                            var arr = item.split(':').map(function (i) {
-                                return i.trim();
+                if (_this['selector'] != closestEle) {
+                    //查找元素本身至最外第二层之间元素的样式
+                    var parentEl = _this['selector'].parentElement;
+                    while (parentEl != closestEle) {
+                        var style = (parentEl.getAttribute('style') || '').trim();
+                        if (style) {
+                            var styleArr = style.split(';');
+                            styleArr.forEach(function (item) {
+                                var arr = item.split(':').map(function (i) {
+                                    return i.trim();
+                                });
+                                if (arr.length === 2) {
+                                    result[arr[0]] = arr[1];
+                                }
                             });
-                            if (arr.length === 2) {
-                                result[arr[0]] = arr[1];
-                            }
-                        });
+                        }
+                        parentEl = parentEl.parentElement;
                     }
-                    parentEl = parentEl.parentElement;
                 }
 
                 if (closestEle) {

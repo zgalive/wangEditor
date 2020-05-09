@@ -266,23 +266,26 @@ DomElement.prototype = {
                 }
             })
 
-            //查找元素本身至最外第二层之间元素的样式
-            let parentEl = this['selector'].parentElement
-            while(parentEl != closestEle){
-                const style = (parentEl.getAttribute('style') || '').trim()
-                if(style){
-                    let styleArr = style.split(';')
-                    styleArr.forEach(item=>{
-                        let arr = item.split(':').map(i => {
-                            return i.trim()
+            if (this['selector'] != closestEle) {
+                //查找元素本身至最外第二层之间元素的样式
+                let parentEl = this['selector'].parentElement
+                while (parentEl != closestEle) {
+                    const style = (parentEl.getAttribute('style') || '').trim()
+                    if (style) {
+                        let styleArr = style.split(';')
+                        styleArr.forEach(item => {
+                            let arr = item.split(':').map(i => {
+                                return i.trim()
+                            })
+                            if (arr.length === 2) {
+                                result[arr[0]] = arr[1]
+                            }
                         })
-                        if (arr.length === 2) {
-                            result[arr[0]] = arr[1]
-                        }
-                    })
+                    }
+                    parentEl = parentEl.parentElement
                 }
-                parentEl = parentEl.parentElement
             }
+            
             
             if(closestEle){
                 let closestStyle = (closestEle.getAttribute('style') || '').trim()
