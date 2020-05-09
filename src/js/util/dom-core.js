@@ -291,6 +291,7 @@ DomElement.prototype = {
                 let closestStyle = (closestEle.getAttribute('style') || '').trim()
                 if(closestStyle){
                     let wrap = {}
+                    closestStyle = JSON.parse(closestStyle)
                     for(let key in closestStyle){
                         wrap[key] = closestStyle[key]
                     }

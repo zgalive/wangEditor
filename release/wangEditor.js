@@ -350,6 +350,7 @@ DomElement.prototype = {
                     var closestStyle = (closestEle.getAttribute('style') || '').trim();
                     if (closestStyle) {
                         var wrap = {};
+                        closestStyle = JSON.parse(closestStyle);
                         for (var _key in closestStyle) {
                             wrap[_key] = closestStyle[_key];
                         }
