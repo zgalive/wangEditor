@@ -246,13 +246,15 @@ DomElement.prototype = {
     css: function (key, val) {
         const currentStyle = `${key}:${val};`
 
+        //如果没有传递 key val，认为是获取元素样式
         if(!key && !val){
-            let result = {};
-            let closestEle = this.closest('p')[0]
+            let result = {}
+            let closestTagName = this.containerTagName()
+            let closestEle = this.closest(closestTagName)[0]
             this.forEach(elem=>{
                 const style = (elem.getAttribute('style') || '').trim()
                 if(style){
-                    let styleArr = style.split(";")
+                    let styleArr = style.split(';')
                     styleArr.forEach(item=>{
                         let arr = item.split(':').map(i => {
                             return i.trim()
@@ -263,8 +265,27 @@ DomElement.prototype = {
                     })
                 }
             })
+
+            //查找元素本身至最外第二层之间元素的样式
+            let parentEl = this['selector'].parentElement
+            while(parentEl != closestEle){
+                const style = (parentEl.getAttribute('style') || '').trim()
+                if(style){
+                    let styleArr = style.split(';')
+                    styleArr.forEach(item=>{
+                        let arr = item.split(':').map(i => {
+                            return i.trim()
+                        })
+                        if (arr.length === 2) {
+                            result[arr[0]] = arr[1]
+                        }
+                    })
+                }
+                parentEl = parentEl.parentElement
+            }
+            
             if(closestEle){
-                let closestStyle = (closestEle.getAttribute('style') || "").trim()
+                let closestStyle = (closestEle.getAttribute('style') || '').trim()
                 if(closestStyle){
                     let wrap = {}
                     for(let key in closestStyle){
@@ -501,25 +522,49 @@ DomElement.prototype = {
     },
 
     closest: function (selector){
-        if(typeof selector === "string"){
-            let isItSelf = this["selector"].tagName === selector
+        if(typeof selector === 'string'){
+            let isItSelf = this['selector'].tagName === selector
             if(isItSelf){
                 return this
             }
         }
 
         var matches = document.querySelectorAll(selector),
-            i,
-            el = this["selector"];
+            el = this['selector']
         
+        let elSecondContainer = this.secondTopContainer()
         for(let elem of matches){
-            if(elem == el.parentElement){
+            if(elem == elSecondContainer[0] || elem == elSecondContainer['selector']){
                 el = elem
-                break;
+                break
             }
         }
 
-        return new DomElement(el);
+        return new DomElement(el)
+    },
+
+    //获取非w-e-text 下最外层父元素
+    secondTopContainer: function(){
+        let thisEl = this[0] || this['selector']
+
+        while(thisEl.parentElement && thisEl.parentElement.className != 'w-e-text'){
+            thisEl = thisEl.parentElement
+        }
+
+        return new DomElement(thisEl)
+    },
+
+    containerTagName: function(){
+        let thisEl = this[0] || this['selector']
+        let tagName = 'p'
+        
+        //往上查找父元素，找到最接近外层的父元素
+        while(thisEl.parentElement && thisEl.parentElement.className != 'w-e-text'){
+            thisEl = thisEl.parentElement
+        }
+
+        tagName = thisEl.tagName
+        return tagName
     },
 
     //只返回紧接着的元素

@@ -49,6 +49,12 @@ var polyfill = function () {
     }
 };
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+  return typeof obj;
+} : function (obj) {
+  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+};
+
 /*
     DOM 操作 API
 */
@@ -163,7 +169,7 @@ DomElement.prototype = {
     },
 
     // 获取第几个元素
-    get: function get(index) {
+    get: function get$$1(index) {
         var length = this.length;
         if (index >= length) {
             index = index % length;
@@ -295,37 +301,66 @@ DomElement.prototype = {
 
     // 修改 css
     css: function css(key, val) {
+        var _this = this;
+
         var currentStyle = key + ':' + val + ';';
 
+        //如果没有传递 key val，认为是获取元素样式
         if (!key && !val) {
-            var result = {};
-            var closestEle = this.closest('p')[0];
-            this.forEach(function (elem) {
-                var style = (elem.getAttribute('style') || '').trim();
-                if (style) {
-                    var styleArr = style.split(";");
-                    styleArr.forEach(function (item) {
-                        var arr = item.split(':').map(function (i) {
-                            return i.trim();
+            var _ret = function () {
+                var result = {};
+                var closestTagName = _this.containerTagName();
+                var closestEle = _this.closest(closestTagName)[0];
+                _this.forEach(function (elem) {
+                    var style = (elem.getAttribute('style') || '').trim();
+                    if (style) {
+                        var styleArr = style.split(';');
+                        styleArr.forEach(function (item) {
+                            var arr = item.split(':').map(function (i) {
+                                return i.trim();
+                            });
+                            if (arr.length === 2) {
+                                result[arr[0]] = arr[1];
+                            }
                         });
-                        if (arr.length === 2) {
-                            result[arr[0]] = arr[1];
-                        }
-                    });
-                }
-            });
-            if (closestEle) {
-                var closestStyle = (closestEle.getAttribute('style') || "").trim();
-                if (closestStyle) {
-                    var wrap = {};
-                    for (var _key in closestStyle) {
-                        wrap[_key] = closestStyle[_key];
                     }
-                    result['wrap'] = wrap;
-                }
-            }
+                });
 
-            return result;
+                //查找元素本身至最外第二层之间元素的样式
+                var parentEl = _this['selector'].parentElement;
+                while (parentEl != closestEle) {
+                    var style = (parentEl.getAttribute('style') || '').trim();
+                    if (style) {
+                        var styleArr = style.split(';');
+                        styleArr.forEach(function (item) {
+                            var arr = item.split(':').map(function (i) {
+                                return i.trim();
+                            });
+                            if (arr.length === 2) {
+                                result[arr[0]] = arr[1];
+                            }
+                        });
+                    }
+                    parentEl = parentEl.parentElement;
+                }
+
+                if (closestEle) {
+                    var closestStyle = (closestEle.getAttribute('style') || '').trim();
+                    if (closestStyle) {
+                        var wrap = {};
+                        for (var _key in closestStyle) {
+                            wrap[_key] = closestStyle[_key];
+                        }
+                        result['wrap'] = wrap;
+                    }
+                }
+
+                return {
+                    v: result
+                };
+            }();
+
+            if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
         }
 
         return this.forEach(function (elem) {
@@ -555,17 +590,17 @@ DomElement.prototype = {
     },
 
     closest: function closest(selector) {
-        if (typeof selector === "string") {
-            var isItSelf = this["selector"].tagName === selector;
+        if (typeof selector === 'string') {
+            var isItSelf = this['selector'].tagName === selector;
             if (isItSelf) {
                 return this;
             }
         }
 
         var matches = document.querySelectorAll(selector),
-            i,
-            el = this["selector"];
+            el = this['selector'];
 
+        var elSecondContainer = this.secondTopContainer();
         var _iteratorNormalCompletion = true;
         var _didIteratorError = false;
         var _iteratorError = undefined;
@@ -574,7 +609,7 @@ DomElement.prototype = {
             for (var _iterator = matches[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                 var elem = _step.value;
 
-                if (elem == el.parentElement) {
+                if (elem == elSecondContainer[0] || elem == elSecondContainer['selector']) {
                     el = elem;
                     break;
                 }
@@ -595,6 +630,30 @@ DomElement.prototype = {
         }
 
         return new DomElement(el);
+    },
+
+    //获取非w-e-text 下最外层父元素
+    secondTopContainer: function secondTopContainer() {
+        var thisEl = this[0] || this['selector'];
+
+        while (thisEl.parentElement && thisEl.parentElement.className != 'w-e-text') {
+            thisEl = thisEl.parentElement;
+        }
+
+        return new DomElement(thisEl);
+    },
+
+    containerTagName: function containerTagName() {
+        var thisEl = this[0] || this['selector'];
+        var tagName = 'p';
+
+        //往上查找父元素，找到最接近外层的父元素
+        while (thisEl.parentElement && thisEl.parentElement.className != 'w-e-text') {
+            thisEl = thisEl.parentElement;
+        }
+
+        tagName = thisEl.tagName;
+        return tagName;
     },
 
     //只返回紧接着的元素
@@ -2950,6 +3009,7 @@ StyleBrush.prototype = {
             return;
         }
 
+        //如果是激活状态，点击则取消
         if (this._active) {
             this._active = false;
             editor._brush = false;
@@ -2962,20 +3022,26 @@ StyleBrush.prototype = {
         editor._brush = true;
 
         this.$elem.addClass('w-e-active');
-        editor.$textContainerElem.addClass('brush');
+        editor.$textContainerElem.addClass('brush'); //todo add cursor type
 
-        var containerEle = editor.selection.getSelectionContainerElem();
+        var containerEle = null;
+        //如果选择了多行作为参照样式，默认使用第一行选区的样式
+        if (editor.selection._currentRange.startContainer != editor.selection._currentRange.endContainer) {
+            containerEle = $(editor.selection._currentRange.startContainer);
+        } else {
+            containerEle = editor.selection.getSelectionContainerElem();
+        }
         var style = containerEle.css();
 
-        while (!containerEle.equal(editor.$textElem[0])) {
-            containerEle = containerEle.parent();
-            if (containerEle.parent().equal(editor.$textElem[0]) && !containerEle.equal(editor.$textElem[0])) {
-                style = Object.assign({}, style, { wrap: containerEle.css() });
-            }
-            if (!containerEle.parent().equal(editor.$textElem[0]) && !containerEle.equal(editor.$textElem[0])) {
-                style = Object.assign({}, style, containerEle.css());
-            }
-        }
+        // while (!containerEle.equal(editor.$textElem[0])) {
+        //     containerEle=containerEle.parent()
+        //     if (containerEle.parent().equal(editor.$textElem[0])&&!containerEle.equal(editor.$textElem[0])) {
+        //         style=Object.assign({},style,{wrap:containerEle.css()})
+        //     }
+        //     if(!containerEle.parent().equal(editor.$textElem[0])&&!containerEle.equal(editor.$textElem[0])){
+        //         style=Object.assign({},style,containerEle.css())
+        //     }
+        // }
 
         editor._style = style;
     }
@@ -3432,14 +3498,17 @@ Text.prototype = {
                     var containerElem = editor.selection.getSelectionContainerElem();
                     if (!containerElem.equal(editor.$textElem[0])) {
                         text = editor.selection.getSelectionText();
-                        containerElem.closest('p')[0].setAttribute('style', wrapStyle);
+                        var closestTag = containerElem.containerTagName();
+                        containerElem.closest(closestTag)[0].setAttribute('style', wrapStyle);
                         editor.cmd.do('insertHTML', '<span style="' + style + '">' + text + '</span>');
                     } else {
                         var elements = [];
                         var startElem = range.startContainer;
-                        var startElemCon = $(startElem).closest('p');
+                        var startClosestTag = $(startElem).containerTagName();
+                        var startElemCon = $(startElem).closest(startClosestTag);
                         var endElem = range.endContainer;
-                        var endElemCon = $(endElem).closest('p');
+                        var endClosestTag = $(endElem).containerTagName();
+                        var endElemCon = $(endElem).closest(endClosestTag);
                         elements.push({
                             type: 'start',
                             elem: startElem,
@@ -4222,12 +4291,6 @@ Progress.prototype = {
         this._isShow = false;
         this._isRender = false;
     }
-};
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
-  return typeof obj;
-} : function (obj) {
-  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
 };
 
 /*

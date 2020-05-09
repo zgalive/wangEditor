@@ -23,6 +23,7 @@ StyleBrush.prototype = {
             return
         }
 
+        //如果是激活状态，点击则取消
         if (this._active) {
             this._active = false
             editor._brush=false
@@ -35,20 +36,26 @@ StyleBrush.prototype = {
         editor._brush=true
 
         this.$elem.addClass('w-e-active')
-        editor.$textContainerElem.addClass('brush')
+        editor.$textContainerElem.addClass('brush')//todo add cursor type
 
-        let containerEle = editor.selection.getSelectionContainerElem()
+        let containerEle = null
+        //如果选择了多行作为参照样式，默认使用第一行选区的样式
+        if(editor.selection._currentRange.startContainer != editor.selection._currentRange.endContainer){
+            containerEle = $(editor.selection._currentRange.startContainer)
+        }else{
+            containerEle = editor.selection.getSelectionContainerElem()
+        }
         let style = containerEle.css()
 
-        while (!containerEle.equal(editor.$textElem[0])) {
-            containerEle=containerEle.parent()
-            if (containerEle.parent().equal(editor.$textElem[0])&&!containerEle.equal(editor.$textElem[0])) {
-                style=Object.assign({},style,{wrap:containerEle.css()})
-            }
-            if(!containerEle.parent().equal(editor.$textElem[0])&&!containerEle.equal(editor.$textElem[0])){
-                style=Object.assign({},style,containerEle.css())
-            }
-        }
+        // while (!containerEle.equal(editor.$textElem[0])) {
+        //     containerEle=containerEle.parent()
+        //     if (containerEle.parent().equal(editor.$textElem[0])&&!containerEle.equal(editor.$textElem[0])) {
+        //         style=Object.assign({},style,{wrap:containerEle.css()})
+        //     }
+        //     if(!containerEle.parent().equal(editor.$textElem[0])&&!containerEle.equal(editor.$textElem[0])){
+        //         style=Object.assign({},style,containerEle.css())
+        //     }
+        // }
 
         editor._style=style
     }

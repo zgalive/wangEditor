@@ -173,11 +173,11 @@ Text.prototype = {
                 let wrapStyle=''
                 for (const key in editor._style) {
                     if (editor._style.hasOwnProperty(key)) {
-                        const element = editor._style[key];
+                        const element = editor._style[key]
                         if (key==='wrap') {
                             for (const Wkey in element) {
                                 if (element.hasOwnProperty(Wkey)) {
-                                    const Welement = element[Wkey];
+                                    const Welement = element[Wkey]
                                     wrapStyle+=`${Wkey}:${Welement};`
                                 }
                             }
@@ -192,14 +192,17 @@ Text.prototype = {
                     let containerElem = editor.selection.getSelectionContainerElem()
                     if (!containerElem.equal(editor.$textElem[0])) {
                         text = editor.selection.getSelectionText()
-                        containerElem.closest('p')[0].setAttribute('style', wrapStyle)
+                        let closestTag = containerElem.containerTagName()
+                        containerElem.closest(closestTag)[0].setAttribute('style', wrapStyle)
                         editor.cmd.do('insertHTML', `<span style="${style}">${text}</span>`)
                     } else {
                         let elements = []
                         let startElem = range.startContainer
-                        let startElemCon = $(startElem).closest('p')
+                        let startClosestTag = $(startElem).containerTagName()
+                        let startElemCon = $(startElem).closest(startClosestTag)
                         let endElem = range.endContainer
-                        let endElemCon = $(endElem).closest('p')
+                        let endClosestTag = $(endElem).containerTagName()
+                        let endElemCon = $(endElem).closest(endClosestTag)
                         elements.push({
                             type: 'start',
                             elem: startElem,
@@ -245,7 +248,7 @@ Text.prototype = {
                                 container[0].setAttribute('style', wrapStyle)
                                 editor.cmd.do('insertHTML', `<span style="${style}">${text}</span>`)
                             }
-                        });
+                        })
                     }
                 }
 
