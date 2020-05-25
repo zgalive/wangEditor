@@ -3543,18 +3543,30 @@ Text.prototype = {
                                 editor.selection.saveRange(range);
                                 editor.selection.restoreSelection();
                                 text = editor.selection.getSelectionText();
-                                container[0].setAttribute('style', wrapStyle);
+                                if (container[0]) {
+                                    container[0].setAttribute('style', wrapStyle);
+                                } else if (container['selector']) {
+                                    container['selector'].setAttribute('style', wrapStyle);
+                                }
                                 editor.cmd.do('insertHTML', '<span style="' + style + '">' + text + '</span>');
                             } else if (element.type === 'mid') {
                                 text = range.toString();
-                                container[0].setAttribute('style', wrapStyle);
+                                if (container[0]) {
+                                    container[0].setAttribute('style', wrapStyle);
+                                } else if (container['selector']) {
+                                    container['selector'].setAttribute('style', wrapStyle);
+                                }
                                 editor.cmd.do('insertHTML', '<span style="' + style + '">' + text + '</span>');
                             } else if (element.type === 'end') {
                                 range.setEnd(element.elem, element.offset);
                                 editor.selection.saveRange(range);
                                 editor.selection.restoreSelection();
                                 text = editor.selection.getSelectionText();
-                                container[0].setAttribute('style', wrapStyle);
+                                if (container[0]) {
+                                    container[0].setAttribute('style', wrapStyle);
+                                } else if (container['selector']) {
+                                    container['selector'].setAttribute('style', wrapStyle);
+                                }
                                 editor.cmd.do('insertHTML', '<span style="' + style + '">' + text + '</span>');
                             }
                         });
